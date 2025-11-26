@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จักรวาลชีววิทยา (Biology Universe Map)</title>
+    <!-- React and ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Google Fonts: Sarabun for Thai -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', 'Outfit', sans-serif; background-color: #0f172a; overflow: hidden; }
+        .glow-text { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .tooltip {
+            backdrop-filter: blur(8px);
+            transition: all 0.2s ease;
+            pointer-events: none;
+        }
+        /* Custom Button */
+        .btn-glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-glass:hover {
+            background: rgba(51, 65, 85, 0.8);
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+            transform: translateY(-1px);
+        }
+        .btn-active {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- RAW DATA ---
+        const rawData = [
+          {
+            "chapter": "บทที่ 2",
+            "title": "เคมีที่เป็นพื้นฐานของสิ่งมีชีวิต",
+            "group": "cell",
+            "data": {
+              "node": "เคมีในสิ่งมีชีวิต",
+              "relation": "แบ่งเป็นสารประกอบอินทรีย์และอนินทรีย์",
+              "targets": [
+                {
+                  "node": "สารประกอบคาร์บอน",
+                  "relation": "แบ่งเป็นประเภทต่างๆ",
+                  "targets": [
+                    {
+                      "node": "คาร์โบไฮเดรต",
+                      "relation": "เป็น",
+                      "targets": [
+                        {"node": "โมโนแซ็กคาไรด์"},
+                        {"node": "ไดแซ็กคาไรด์"},
+                        {"node": "พอลีแซ็กคาไรด์"}
+                      ],
+                      "function": "มีหน้าที่",
+                      "function_targets": [
+                        {"node": "เป็นอาหารสะสมของพืชและสัตว์"},
+                        {"node": "องค์ประกอบของเยื่อหุ้มเซลล์"},
+                        {"node": "ให้พลังงาน"}
+                      ]
+                    },
+                    {
+                      "node": "โปรตีน",
+                      "relation": "ประกอบด้วย",
+                      "targets": [{"node": "กรดแอมิโน"}],
+                      "function": "มีหน้าที่",
+                      "function_targets": [
+                        {"node": "ส่วนประกอบของเยื่อ"},
+                        {"node": "องค์ประกอบของออร์แกเนลล์"},
+                        {"node": "ให้พลังงาน"},
+                        {"node": "เป็นเอนไซม์ (เร่งปฏิกิริยาเคมีในสิ่งมีชีวิต)"}
+                      ]
+                    },
+                    {
+                      "node": "ลิพิด",
+                      "relation": "กลุ่มที่สำคัญ ได้แก่",
+                      "targets": [
+                        {"node": "กลีเซอรอล"},
+                        {"node": "ไตรกลีเซอไรด์"},
+                        {"node": "ฟอสโฟลิพิด"},
+                        {"node": "สเตอรอยด์"}
+                      ],
+                      "function": "มีหน้าที่",
+                      "function_targets": [
+                        {"node": "ให้พลังงาน"},
+                        {"node": "องค์ประกอบของเยื่อหุ้มเซลล์และผนังเซลล์"},
+                        {"node": "เป็นฉนวนควบคุมอุณหภูมิและป้องกันการสูญเสียน้ำ"}
+                      ]
+                    },
+                    {
+                      "node": "กรดนิวคลีอิก",
+                      "relation": "ประกอบด้วย",
+                      "targets": [{"node": "นิวคลีโอไทด์ (น้ำตาล, ไนโตรจีนัสเบส, หมู่ฟอสเฟต)"}],
+                      "function": "มีหน้าที่",
+                      "function_targets": [{"node": "เป็นสารพันธุกรรม"}]
+                    }
+                  ]
+                },
+                {
+                  "node": "น้ำ",
+                  "function": "ทำหน้าที่",
+                  "function_targets": [
+                    {"node": "เป็นตัวทำละลาย"},
+                    {"node": "ลำเลียงสาร"},
+                    {"node": "รักษาดุลยภาพอุณหภูมิ"},
+                    {
+                      "node": "รักษาดุลยภาพความเป็นกรด-เบส",
+                      "relation": "โดยมี",
+                      "targets": [
+                        {
+                          "node": "บัฟเฟอร์",
+                          "relation": "ประกอบด้วย",
+                          "targets": [{"node": "แอนไอออน"}, {"node": "แคนไอออน"}]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 3",
+            "title": "เซลล์และการทำงานของเซลล์",
+            "group": "cell",
+            "data": {
+              "node": "เซลล์และการทำงานของเซลล์",
+              "targets": [
+                {
+                  "node": "โครงสร้างของเซลล์",
+                  "relation": "ศึกษาด้วย",
+                  "targets": [
+                    {"node": "เยื่อหุ้มเซลล์"},
+                    {"node": "นิวเคลียส"},
+                    {
+                      "node": "ไซโทพลาซึม",
+                      "relation": "มี",
+                      "targets": [
+                        {"node": "ออร์แกเนลล์ (เช่น ไมโทคอนเดรีย, พลาสทิด, ไรโบโซม, แวคิวโอล)"}
+                      ]
+                    }
+                  ]
+                },
+                {"node": "กลไกควบคุมการแสดงออก"},
+                {
+                  "node": "การทำงานของเซลล์",
+                  "targets": [
+                    {
+                      "node": "การลำเลียงสารเข้าและออกจากเซลล์",
+                      "relation": "แบ่งเป็น",
+                      "targets": [
+                        {"node": "ออสโมซิส"},
+                        {"node": "การแพร่"},
+                        {"node": "แอคทีฟทรานสปอร์ต"},
+                        {"node": "เอนโดไซโทซิส"},
+                        {"node": "เอกโซไซโทซิส"}
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "node": "การแบ่งเซลล์",
+                  "relation": "แบ่งเป็น",
+                  "targets": [{"node": "ไมโทซิส"}, {"node": "ไมโอซิส"}]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 4",
+            "title": "โครโมโซมและสารพันธุกรรม",
+            "group": "genetics",
+            "data": {
+              "node": "สารพันธุกรรมของสิ่งมีชีวิต",
+              "relation": "เป็น",
+              "targets": [
+                {
+                  "node": "DNA",
+                  "relation": "ประกอบด้วย",
+                  "targets": [
+                    {
+                      "node": "พอลินิวคลีโอไทด์ 2 สาย",
+                      "relation": "สามารถ",
+                      "targets": [
+                        {
+                          "node": "เพิ่มจำนวนได้",
+                          "targets": [{"node": "การจำลองดีเอ็นเอ (DNA เหมือนโมเลกุลเดิม)"}]
+                        },
+                        {
+                          "node": "ควบคุมลักษณะทางพันธุกรรม",
+                          "relation": "ผ่านทาง",
+                          "targets": [
+                            {
+                              "node": "การสังเคราะห์โปรตีน",
+                              "relation": "โดย",
+                              "targets": [
+                                {"node": "ยีน (มีกระบวนการถอดรหัส)"},
+                                {"node": "ระดับยีน"}
+                              ]
+                            },
+                            {"node": "rRNA"},
+                            {"node": "mRNA (มีกระบวนการแปลรหัส)"},
+                            {"node": "tRNA"},
+                            {"node": "พอลิเพปไทด์"}
+                          ]
+                        },
+                        {
+                          "node": "เปลี่ยนแปลงได้",
+                          "targets": [
+                            {
+                              "node": "มิวเทชัน",
+                              "relation": "แบ่งเป็น",
+                              "targets": [{"node": "ระดับยีน"}, {"node": "ระดับโครโมโซม"}]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 5",
+            "title": "การถ่ายทอดลักษณะทางพันธุกรรม",
+            "group": "genetics",
+            "data": {
+              "node": "การถ่ายทอดลักษณะทางพันธุกรรม",
+              "relation": "ศึกษาเกี่ยวกับ",
+              "targets": [
+                {
+                  "node": "การศึกษาพันธุกรรมของเมนเดล",
+                  "relation": "สรุปเป็น",
+                  "targets": [
+                    {"node": "กฎการแยก"},
+                    {"node": "กฎการรวมกลุ่มอย่างอิสระ"}
+                  ]
+                },
+                {
+                  "node": "ส่วนขยายของพันธุศาสตร์เมนเดล",
+                  "relation": "ได้แก่",
+                  "targets": [
+                    {"node": "ความไม่สมบูรณ์"},
+                    {"node": "ความร่วม"},
+                    {"node": "มัลติเพิลแอลลีล"},
+                    {"node": "ลักษณะควบคุมด้วยยีนหลายคู่"},
+                    {"node": "การถ่ายทอดยีนในไซโทพลาซึม"}
+                  ]
+                },
+                {
+                  "node": "การถ่ายทอดยีนบนโครโมโซมเดียวกัน",
+                  "relation": "อาจเกิด",
+                  "targets": [{"node": "ครอสซิงโอเวอร์"}, {"node": "รีคอมบิเนชัน"}]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 6",
+            "title": "เทคโนโลยีชีวภาพดีเอ็นเอ",
+            "group": "genetics",
+            "data": {
+              "node": "เทคโนโลยีชีวภาพดีเอ็นเอ",
+              "relation": "ศึกษาเกี่ยวกับ",
+              "targets": [
+                {
+                  "node": "การโคลนยีน",
+                  "relation": "เพื่อเพิ่มปริมาณ DNA",
+                  "targets": [
+                    {
+                      "node": "พันธุวิศวกรรม",
+                      "relation": "โดยใช้",
+                      "targets": [{"node": "พลาสมิดของแบคทีเรีย"}, {"node": "ดีเอ็นเอรีคอมบิแนนท์"}]
+                    },
+                     {
+                      "node": "เทคนิค PCR",
+                      "relation": "โดยใช้",
+                      "targets": [{"node": "เครื่องเทอร์มัลไซเคลอร์"}]
+                    }
+                  ]
+                },
+                {
+                  "node": "การประยุกต์ใช้",
+                  "relation": "ในด้าน",
+                  "targets": [
+                    {"node": "การแพทย์และเภสัชกรรม"},
+                    {"node": "การเกษตรและอุตสาหกรรม"},
+                    {"node": "นิติวิทยาศาสตร์"}
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 7",
+            "title": "วิวัฒนาการ",
+            "group": "evolution",
+            "data": {
+              "node": "วิวัฒนาการของสิ่งมีชีวิต",
+              "targets": [
+                {
+                  "node": "หลักฐานวิวัฒนาการ",
+                  "targets": [
+                    {"node": "ซากดึกดำบรรพ์"},
+                    {"node": "กายวิภาคเปรียบเทียบ"},
+                    {"node": "วิทยาเอ็มบริโอ"},
+                    {"node": "ชีววิทยาโมเลกุล"}
+                  ]
+                },
+                {
+                  "node": "แนวคิดวิวัฒนาการ",
+                  "targets": [
+                    {"node": "ลามาซาร์ค (กฎการใช้และไม่ใช้)"},
+                    {"node": "ดาร์วิน (การคัดเลือกโดยธรรมชาติ)"}
+                  ]
+                },
+                {
+                  "node": "พันธุศาสตร์ประชากร",
+                  "relation": "ศึกษา",
+                  "targets": [
+                    {"node": "ความถี่ของแอลลีล"},
+                    {"node": "ฮาร์ดี-ไวน์เบิร์ก"}
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 8",
+            "title": "การสืบพันธุ์ของพืชดอก",
+            "group": "plants",
+            "data": {
+              "node": "พืชดอก",
+              "targets": [
+                {
+                  "node": "โครงสร้างดอก",
+                  "targets": [{"node": "กลีบเลี้ยง/ดอก"}, {"node": "เกสรเพศผู้/เมีย"}]
+                },
+                {
+                  "node": "วัฏจักรชีวิตแบบสลับ",
+                  "targets": [{"node": "สปอโรไฟต์"}, {"node": "แกมีโทไฟต์"}]
+                },
+                {
+                  "node": "การปฏิสนธิคู่",
+                  "targets": [
+                    {"node": "ไซโกต (เอ็มบริโอ)"},
+                    {"node": "เอนโดสเปิร์ม (อาหารสะสม)"}
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 9",
+            "title": "โครงสร้างพืชดอก",
+            "group": "plants",
+            "data": {
+              "node": "โครงสร้างพืช",
+              "targets": [
+                {
+                  "node": "เนื้อเยื่อพืช",
+                  "targets": [
+                    {"node": "เนื้อเยื่อเจริญ"},
+                    {"node": "เนื้อเยื่อถาวร (ผิว, พื้น, ลำเลียง)"}
+                  ]
+                },
+                {
+                  "node": "อวัยวะพืช",
+                  "targets": [
+                    {"node": "ราก"},
+                    {"node": "ลำต้น"},
+                    {"node": "ใบ (มีโซฟิลล์)"}
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 10",
+            "title": "การลำเลียงของพืช",
+            "group": "plants",
+            "data": {
+              "node": "การลำเลียงในพืช",
+              "targets": [
+                {
+                  "node": "การลำเลียงน้ำ",
+                  "relation": "ผ่านไซเล็ม",
+                  "targets": [{"node": "แรงดันราก"}, {"node": "แรงดึงจากการคายน้ำ"}]
+                },
+                {
+                  "node": "การลำเลียงอาหาร",
+                  "relation": "ผ่านโฟลเอ็ม",
+                  "targets": [{"node": "ความแตกต่างความดัน"}]
+                },
+                {"node": "การเปิดปิดปากใบ"}
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 11",
+            "title": "การสังเคราะห์ด้วยแสง",
+            "group": "plants",
+            "data": {
+              "node": "Photosynthesis",
+              "targets": [
+                {
+                  "node": "ปฏิกิริยาแสง",
+                  "targets": [{"node": "สร้าง ATP, NADPH"}]
+                },
+                {
+                  "node": "วัฏจักรคัลวิน",
+                  "targets": [{"node": "การตรึงคาร์บอน (สร้างน้ำตาล)"}]
+                },
+                {
+                  "node": "ประเภทพืช",
+                  "targets": [{"node": "C3"}, {"node": "C4"}, {"node": "CAM"}]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 12",
+            "title": "การตอบสนองของพืช",
+            "group": "plants",
+            "data": {
+              "node": "การตอบสนองของพืช",
+              "targets": [
+                {
+                  "node": "ฮอร์โมนพืช",
+                  "targets": [{"node": "ออกซิน"}, {"node": "จิบเบอเรลลิน"}, {"node": "ไซโทไคนิน"}, {"node": "เอทิลีน"}, {"node": "กรดแอบไซซิก"}]
+                },
+                {
+                  "node": "การเคลื่อนไหว",
+                  "targets": [{"node": "Tropism (ทิศทางสัมพันธ์สิ่งเร้า)"}, {"node": "Nastic (ไม่สัมพันธ์)"}]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 13",
+            "title": "ระบบย่อยอาหาร",
+            "group": "animals",
+            "data": {
+              "node": "ระบบย่อยอาหาร",
+              "targets": [
+                {
+                  "node": "สัตว์",
+                  "targets": [{"node": "ย่อยภายในเซลล์ (ฟองน้ำ)"}, {"node": "ทางเดินอาหารไม่สมบูรณ์ (ไฮดรา)"}, {"node": "ทางเดินอาหารสมบูรณ์"}]
+                },
+                {
+                  "node": "มนุษย์",
+                  "targets": [
+                    {"node": "ปาก/หลอดอาหาร"},
+                    {"node": "กระเพาะอาหาร (ย่อยโปรตีน)"},
+                    {"node": "ลำไส้เล็ก (ย่อย/ดูดซึมหลัก)"},
+                    {"node": "ลำไส้ใหญ่"}
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 14",
+            "title": "ระบบหายใจ",
+            "group": "animals",
+            "data": {
+              "node": "ระบบหายใจ",
+              "targets": [
+                {
+                  "node": "โครงสร้างแลกเปลี่ยนแก๊ส",
+                  "targets": [{"node": "เหงือก (ปลา)"}, {"node": "ท่อลม (แมลง)"}, {"node": "ปอด (สัตว์บก)"}]
+                },
+                {
+                  "node": "มนุษย์",
+                  "targets": [{"node": "จมูก -> หลอดลม -> ปอด"}, {"node": "ถุงลม (Alveoli)"}, {"node": "กะบังลม"}]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 15",
+            "title": "ระบบหมุนเวียนเลือด",
+            "group": "animals",
+            "data": {
+              "node": "Circulatory System",
+              "targets": [
+                {"node": "ระบบเปิด (แมลง, กุ้ง)"},
+                {
+                  "node": "ระบบปิด (สัตว์มีกระดูกสันหลัง)",
+                  "targets": [{"node": "หัวใจ"}, {"node": "หลอดเลือด (Artery, Vein, Capillary)"}, {"node": "เลือด (RBC, WBC, Platelet)"}]
+                },
+                {"node": "ระบบน้ำเหลือง"}
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 16",
+            "title": "ระบบภูมิคุ้มกัน",
+            "group": "animals",
+            "data": {
+              "node": "ระบบภูมิคุ้มกัน",
+              "targets": [
+                {
+                  "node": "แบบไม่จำเพาะ",
+                  "targets": [{"node": "ผิวหนัง"}, {"node": "การอักเสบ"}, {"node": "ฟาโกไซต์"}]
+                },
+                {
+                  "node": "แบบจำเพาะ",
+                  "targets": [{"node": "B-cell (แอนติบอดี)"}, {"node": "T-cell (ทำลายเซลล์ติดเชื้อ)"}]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 17",
+            "title": "ระบบขับถ่าย",
+            "group": "animals",
+            "data": {
+              "node": "Excretory System",
+              "targets": [
+                {
+                  "node": "โครงสร้างสัตว์",
+                  "targets": [{"node": "เฟลมเซลล์ (พลานาเรีย)"}, {"node": "เนฟริเดียม (ไส้เดือน)"}, {"node": "ท่อมาลพิเกียน (แมลง)"}]
+                },
+                {
+                  "node": "มนุษย์ (ไต)",
+                  "targets": [{"node": "หน่วยไต (Nephron)"}, {"node": "การกรอง"}, {"node": "การดูดกลับ"}, {"node": "การหลั่ง"}]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 18",
+            "title": "ระบบประสาท",
+            "group": "animals",
+            "data": {
+              "node": "Nervous System",
+              "targets": [
+                {
+                  "node": "เซลล์ประสาท (Neuron)",
+                  "targets": [{"node": "เดนไดรต์"}, {"node": "แอกซอน"}, {"node": "ไซแนปส์"}]
+                },
+                {
+                  "node": "ระบบประสาทส่วนกลาง (CNS)",
+                  "targets": [{"node": "สมอง"}, {"node": "ไขสันหลัง"}]
+                },
+                {
+                  "node": "ระบบประสาทรอบนอก (PNS)",
+                  "targets": [{"node": "เส้นประสาทสมอง/ไขสันหลัง"}, {"node": "ระบบประสาทอัตโนมัติ (Sym/Para)"}]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 19",
+            "title": "การเคลื่อนที่",
+            "group": "animals",
+            "data": {
+              "node": "การเคลื่อนที่",
+              "targets": [
+                {"node": "สิ่งมีชีวิตเซลล์เดียว (Cilia, Flagella, Pseudopodia)"},
+                {"node": "สัตว์ไม่มีกระดูกสันหลัง (กล้ามเนื้อ, แรงดันน้ำ)"},
+                {"node": "มนุษย์ (กระดูกและกล้ามเนื้อ)"}
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 20",
+            "title": "ระบบต่อมไร้ท่อ",
+            "group": "animals",
+            "data": {
+              "node": "Endocrine System",
+              "targets": [
+                {"node": "ต่อมใต้สมอง (Master Gland)"},
+                {"node": "ต่อมไทรอยด์ (Metabolism)"},
+                {"node": "ต่อมหมวกไต (Stress)"},
+                {"node": "ตับอ่อน (Insulin/Glucagon)"},
+                {"node": "ต่อมเพศ"}
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 21",
+            "title": "ระบบสืบพันธุ์",
+            "group": "animals",
+            "data": {
+              "node": "Reproduction",
+              "targets": [
+                {"node": "ไม่อาศัยเพศ (แตกหน่อ, งอกใหม่)"},
+                {
+                  "node": "อาศัยเพศ (มนุษย์)",
+                  "targets": [
+                    {"node": "สร้างอสุจิ (Spermatogenesis)"},
+                    {"node": "สร้างไข่ (Oogenesis)"},
+                    {"node": "การปฏิสนธิ"},
+                    {"node": "การเจริญของเอ็มบริโอ"}
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 22",
+            "title": "พฤติกรรมสัตว์",
+            "group": "animals",
+            "data": {
+              "node": "พฤติกรรมสัตว์",
+              "targets": [
+                {"node": "ที่มีมาแต่กำเนิด (Reflex, Taxis)"},
+                {"node": "การเรียนรู้ (ฝังใจ, ลองผิดลองถูก, ใช้เหตุผล)"}
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 23",
+            "title": "ความหลากหลายทางชีวภาพ",
+            "group": "ecology",
+            "data": {
+              "node": "Biodiversity",
+              "targets": [
+                {
+                  "node": "อาณาจักรสิ่งมีชีวิต",
+                  "targets": [{"node": "Monera"}, {"node": "Protista"}, {"node": "Fungi"}, {"node": "Plantae"}, {"node": "Animalia"}]
+                },
+                {"node": "อนุกรมวิธาน (Taxonomy)"}
+              ]
+            }
+          },
+          {
+            "chapter": "บทที่ 24",
+            "title": "ระบบนิเวศ",
+            "group": "ecology",
+            "data": {
+              "node": "Ecosystem",
+              "targets": [
+                {"node": "ไบโอม (Biomes)"},
+                {"node": "การถ่ายทอดพลังงาน (ห่วงโซ่อาหาร)"},
+                {"node": "วัฏจักรสาร (น้ำ, คาร์บอน, ไนโตรเจน)"},
+                {"node": "ประชากร (Population)"}
+              ]
+            }
+          }
+        ];
+
+        // --- UTILS ---
+        
+        const processData = (data) => {
+            const root = {
+                id: "root",
+                label: "ชีววิทยา (Biology)",
+                group: "root",
+                description: "ศูนย์กลางความรู้ชีววิทยาสมัยใหม่",
+                children: []
+            };
+
+            const groupMap = {
+                "บทที่ 2": "cell", "บทที่ 3": "cell",
+                "บทที่ 4": "genetics", "บทที่ 5": "genetics", "บทที่ 6": "genetics",
+                "บทที่ 7": "evolution",
+                "บทที่ 8": "plants", "บทที่ 9": "plants", "บทที่ 10": "plants", "บทที่ 11": "plants", "บทที่ 12": "plants",
+                "บทที่ 13": "animals", "บทที่ 14": "animals", "บทที่ 15": "animals", "บทที่ 16": "animals", "บทที่ 17": "animals", 
+                "บทที่ 18": "animals", "บทที่ 19": "animals", "บทที่ 20": "animals", "บทที่ 21": "animals", "บทที่ 22": "animals",
+                "บทที่ 23": "ecology", "บทที่ 24": "ecology"
+            };
+
+            data.forEach((chapter, index) => {
+                const group = chapter.group || groupMap[chapter.chapter] || "tech";
+                const chapterNode = {
+                    id: `ch-${index}`,
+                    label: chapter.title,
+                    group: group,
+                    description: chapter.chapter,
+                    children: []
+                };
+
+                const processTargets = (targets, parentId) => {
+                    if (!targets) return [];
+                    return targets.map((t, i) => {
+                        const id = `${parentId}-${i}`;
+                        const desc = t.relation ? t.relation : (t.function ? `หน้าที่: ${t.function}` : "");
+                        const node = {
+                            id: id,
+                            label: t.node,
+                            group: group,
+                            description: desc,
+                            children: []
+                        };
+                        
+                        let childrenTargets = t.targets || [];
+                        if (t.function_targets) {
+                             const funcTargetsWrapped = t.function_targets.map(ft => ({...ft, relation: "หน้าที่"}));
+                             childrenTargets = [...childrenTargets, ...funcTargetsWrapped];
+                        }
+
+                        if (childrenTargets.length > 0) {
+                            node.children = processTargets(childrenTargets, id);
+                        }
+                        return node;
+                    });
+                };
+
+                if (chapter.data) {
+                    if (chapter.data.targets) {
+                        chapterNode.children = processTargets(chapter.data.targets, chapterNode.id);
+                    } else if (Array.isArray(chapter.data)) {
+                        chapterNode.children = processTargets(chapter.data, chapterNode.id);
+                    }
+                }
+                
+                root.children.push(chapterNode);
+            });
+
+            return root;
+        };
+
+
+        const flattenData = (rootData) => {
+            const nodes = [];
+            const links = [];
+            
+            // For tree mode, we need d3 hierarchy structure
+            const hierarchy = d3.hierarchy(rootData);
+            
+            function recurse(node, parentId = null) {
+                const newNode = { ...node, children: undefined, _children: node.children }; 
+                nodes.push(newNode);
+                
+                if (parentId) {
+                    links.push({ source: parentId, target: newNode.id, value: 1 });
+                }
+                
+                if (node.children) {
+                    node.children.forEach(child => recurse(child, node.id));
+                }
+            }
+            
+            recurse(rootData);
+            return { nodes, links, hierarchy };
+        };
+
+        const colors = {
+            root: "#ffffff",
+            cell: "#3b82f6",     // Blue
+            genetics: "#a855f7", // Purple
+            evolution: "#22c55e",// Green
+            plants: "#84cc16",   // Lime
+            animals: "#f43f5e",  // Rose
+            ecology: "#06b6d4",  // Cyan
+            tech: "#64748b"      // Slate
+        };
+
+        // --- COMPONENTS ---
+
+        const Legend = ({ items }) => (
+            <div className="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-md p-4 rounded-xl border border-slate-700 shadow-xl z-10 max-w-xs max-h-[80vh] overflow-y-auto hidden md:block">
+                <h3 className="text-slate-300 font-semibold mb-3 text-sm uppercase tracking-wider font-sarabun">กลุ่มเนื้อหา (Clusters)</h3>
+                <div className="space-y-2">
+                    {items.map(item => (
+                        <div key={item.key} className="flex items-center space-x-2">
+                            <span className="w-3 h-3 rounded-full shadow-lg flex-shrink-0" style={{ backgroundColor: item.color, boxShadow: `0 0 8px ${item.color}` }}></span>
+                            <span className="text-slate-400 text-xs font-medium font-sarabun">{item.label}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+
+        const ConstellationGraph = () => {
+            const svgRef = useRef(null);
+            const containerRef = useRef(null);
+            const [hoveredNode, setHoveredNode] = useState(null);
+            const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+            const [mode, setMode] = useState('galaxy'); // 'galaxy' | 'structured'
+            
+            const graphData = useMemo(() => {
+                const processed = processData(rawData);
+                // Pre-sort children by group for structured mode
+                processed.children.sort((a, b) => {
+                    const groups = ['cell', 'genetics', 'evolution', 'plants', 'animals', 'ecology'];
+                    return groups.indexOf(a.group) - groups.indexOf(b.group);
+                });
+                return flattenData(processed);
+            }, []);
+
+            useEffect(() => {
+                const updateDimensions = () => {
+                    if (containerRef.current) {
+                        setDimensions({
+                            width: containerRef.current.clientWidth,
+                            height: containerRef.current.clientHeight
+                        });
+                    }
+                };
+                window.addEventListener('resize', updateDimensions);
+                updateDimensions();
+                return () => window.removeEventListener('resize', updateDimensions);
+            }, []);
+
+            useEffect(() => {
+                if (!svgRef.current || !graphData.nodes.length) return;
+
+                const { width, height } = dimensions;
+                const svg = d3.select(svgRef.current);
+                svg.selectAll("*").remove(); 
+
+                // --- DEFS for Glow ---
+                const defs = svg.append("defs");
+                const filter = defs.append("filter").attr("id", "glow");
+                filter.append("feGaussianBlur").attr("stdDeviation", "2.5").attr("result", "coloredBlur");
+                const feMerge = filter.append("feMerge");
+                feMerge.append("feMergeNode").attr("in", "coloredBlur");
+                feMerge.append("feMergeNode").attr("in", "SourceGraphic");
+
+                // Gradient for Links
+                const gradient = defs.append("linearGradient")
+                    .attr("id", "link-gradient")
+                    .attr("gradientUnits", "userSpaceOnUse");
+                gradient.append("stop").attr("offset", "0%").attr("stop-color", "#334155").attr("stop-opacity", 0.1);
+                gradient.append("stop").attr("offset", "50%").attr("stop-color", "#94a3b8").attr("stop-opacity", 0.8);
+                gradient.append("stop").attr("offset", "100%").attr("stop-color", "#334155").attr("stop-opacity", 0.1);
+
+                const g = svg.append("g");
+                
+                const zoom = d3.zoom()
+                    .scaleExtent([0.05, 4])
+                    .on("zoom", (event) => {
+                        g.attr("transform", event.transform);
+                    });
+
+                svg.call(zoom);
+
+                // Initial Transform based on mode
+                if (mode === 'galaxy') {
+                     svg.call(zoom.transform, d3.zoomIdentity.translate(width/2, height/2).scale(0.12).translate(-width/2, -height/2));
+                } else {
+                     svg.call(zoom.transform, d3.zoomIdentity.translate(100, height/2).scale(0.8));
+                }
+
+
+                // --- DATA PREP & LINKS ---
+                const link = g.append("g")
+                    .attr("fill", "none")
+                    .attr("stroke-width", 4)  // thicker links
+                    .selectAll("path")
+                    .data(graphData.links)
+                    .join("path")
+                    .attr("class", "link")
+                    .attr("stroke", "url(#link-gradient)")
+                    .style("filter", "url(#glow)"); // Glow effect
+
+                const node = g.append("g")
+                    .selectAll("g") // Group for circle + text to move together
+                    .data(graphData.nodes)
+                    .join("g")
+                    .style("cursor", "pointer");
+
+                const circle = node.append("circle")
+                    .attr("r", d => {
+                        if (d.id === 'root') return 30;
+                        if (d.id.startsWith('ch-')) return 15; 
+                        return Math.max(3, 8 - d.id.split('-').length);
+                    })
+                    .attr("fill", d => colors[d.group])
+                    .attr("stroke", "#0f172a")
+                    .attr("stroke-width", 1);
+
+                const text = node.append("text")
+                    .text(d => d.label)
+                    .attr("x", d => d.id === 'root' ? 35 : 18)
+                    .attr("y", 5)
+                    .attr("fill", "#94a3b8")
+                    .attr("font-family", "Sarabun, sans-serif")
+                    .attr("font-size", d => {
+                         if (d.id === 'root') return "40px";
+                         if (d.id.startsWith('ch-')) return "24px";
+                         return "10px";
+                    })
+                    .attr("font-weight", d => d.id === 'root' || d.id.startsWith('ch-') ? "bold" : "normal")
+                    .style("pointer-events", "none")
+                    .style("text-shadow", "0 2px 4px #000");
+
+
+                // --- SIMULATION (GALAXY MODE) ---
+                let simulation;
+
+                if (mode === 'galaxy') {
+                    simulation = d3.forceSimulation(graphData.nodes)
+                        .force("link", d3.forceLink(graphData.links)
+                            .id(d => d.id)
+                            .distance(d => d.target.children ? 320 : 190) // more spacing between levels
+                        ) 
+                        .force("charge", d3.forceManyBody().strength(d => d.id === 'root' ? -8000 : -2500)) // stronger repulsion
+                        .force("center", d3.forceCenter(width / 2, height / 2))
+                        .force("collide", d3.forceCollide().radius(d => d.children ? 120 : 55).iterations(2)) // bigger collide radius
+                        .velocityDecay(0.55);
+
+                    simulation.on("tick", () => {
+                        link.attr("d", d => `M${d.source.x},${d.source.y} L${d.target.x},${d.target.y}`);
+                        node.attr("transform", d => `translate(${d.x},${d.y})`);
+                    });
+
+                    // Drag behavior only for galaxy mode
+                    node.call(d3.drag()
+                        .on("start", (event, d) => {
+                            if (!event.active) simulation.alphaTarget(0.3).restart();
+                            d.fx = d.x;
+                            d.fy = d.y;
+                        })
+                        .on("drag", (event, d) => {
+                            d.fx = event.x;
+                            d.fy = event.y;
+                        })
+                        .on("end", (event, d) => {
+                            if (!event.active) simulation.alphaTarget(0);
+                            d.fx = null;
+                            d.fy = null;
+                        }));
+
+                } else {
+                    // --- TREE MODE (STRUCTURED) ---
+                    // 1. Re-construct hierarchy for tree layout
+                    const rootHierarchy = d3.hierarchy(processData(rawData));
+                    
+                    // Sort children: Group > Chapter > Subtopic
+                    const groupOrder = ['cell', 'genetics', 'evolution', 'plants', 'animals', 'ecology'];
+                    rootHierarchy.sort((a, b) => {
+                         // Sort by group first
+                         const gA = groupOrder.indexOf(a.data.group);
+                         const gB = groupOrder.indexOf(b.data.group);
+                         if (gA !== gB) return gA - gB;
+                         return 0;
+                    });
+
+                    // 2. Compute Tree Layout
+                    // Increase vertical spacing
+                    const treeHeight = Math.max(height, rootHierarchy.descendants().length * 35);
+                    const treeLayout = d3.tree().size([treeHeight, width * 1.8]);
+                    
+                    treeLayout(rootHierarchy);
+
+                    // 3. Map tree coordinates back to our graphData.nodes
+                    const nodeMap = new Map(rootHierarchy.descendants().map(d => [d.data.id, d]));
+
+                    // Update positions
+                    graphData.nodes.forEach(n => {
+                        const treeNode = nodeMap.get(n.id);
+                        if (treeNode) {
+                            n.x = treeNode.y; // Swap x/y for horizontal tree
+                            n.y = treeNode.x;
+                        }
+                    });
+
+                    // Update Visuals (Static)
+                    node.transition().duration(1000)
+                        .attr("transform", d => `translate(${d.x},${d.y})`);
+
+                    link.transition().duration(1000)
+                        .attr("d", d3.linkHorizontal()
+                            .x(d => d.x)
+                            .y(d => d.y)
+                        );
+                }
+
+                // Interactions
+                node.on("mouseover", (event, d) => {
+                    d3.select(event.currentTarget).select("circle")
+                        .transition().duration(200)
+                        .attr("r", r => parseFloat(d3.select(event.currentTarget).select("circle").attr("r")) * 1.5)
+                        .attr("filter", "drop-shadow(0 0 10px rgba(255,255,255,0.6))");
+                    
+                    setHoveredNode({
+                        ...d,
+                        x: event.pageX,
+                        y: event.pageY
+                    });
+                })
+                .on("mouseout", (event, d) => {
+                     d3.select(event.currentTarget).select("circle")
+                        .transition().duration(200)
+                        .attr("r", d => {
+                             if (d.id === 'root') return 30;
+                             if (d.id.startsWith('ch-')) return 15;
+                             return Math.max(3, 8 - d.id.split('-').length);
+                        })
+                        .attr("filter", null);
+                    setHoveredNode(null);
+                });
+
+                return () => {
+                    if (simulation) simulation.stop();
+                };
+
+            }, [dimensions, graphData, mode]); // Re-run when mode changes
+
+            return (
+                <div className="relative w-full h-screen bg-slate-900 overflow-hidden font-sarabun" ref={containerRef}>
+                    
+                    {/* Background Stars Effect */}
+                    <div className="absolute inset-0 z-0 opacity-40 pointer-events-none" 
+                        style={{backgroundImage: 'radial-gradient(circle at center, #1e293b 0%, #0f172a 100%)'}}>
+                    </div>
+                    
+                    {/* Header */}
+                    <div className="absolute top-6 left-6 z-10 pointer-events-none select-none">
+                        <h1 className="text-4xl font-bold text-white tracking-tight glow-text font-sarabun">จักรวาล <span className="text-blue-400">ชีววิทยา</span></h1>
+                        <p className="text-slate-400 text-sm mt-1 font-sarabun">แผนที่แนวคิดฉบับสมบูรณ์ (24 บทเรียน)</p>
+                    </div>
+
+                    {/* Mode Toggle */}
+                    <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-20 flex space-x-4">
+                        <button 
+                            onClick={() => setMode('galaxy')}
+                            className={`px-6 py-2 rounded-full text-sm font-semibold text-white transition-all btn-glass ${mode === 'galaxy' ? 'btn-active' : ''}`}
+                        >
+                            🌌 Galaxy View
+                        </button>
+                        <button 
+                            onClick={() => setMode('structured')}
+                            className={`px-6 py-2 rounded-full text-sm font-semibold text-white transition-all btn-glass ${mode === 'structured' ? 'btn-active' : ''}`}
+                        >
+                            📑 Order Alignment
+                        </button>
+                    </div>
+
+                    {/* D3 Graph */}
+                    <svg ref={svgRef} width={dimensions.width} height={dimensions.height} className={`z-0 ${mode === 'galaxy' ? 'cursor-move' : 'cursor-default'}`}></svg>
+
+                    {/* Tooltip */}
+                    {hoveredNode && (
+                        <div 
+                            className="absolute z-20 tooltip bg-slate-800/95 border border-slate-600 p-4 rounded-lg shadow-2xl max-w-xs pointer-events-none"
+                            style={{ 
+                                left: Math.min(hoveredNode.x + 20, dimensions.width - 320),
+                                top: Math.min(hoveredNode.y - 20, dimensions.height - 200),
+                            }}
+                        >
+                            <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-700">
+                                <span className="w-3 h-3 rounded-full flex-shrink-0" style={{backgroundColor: colors[hoveredNode.group]}}></span>
+                                <h4 className="text-white font-bold text-lg font-sarabun leading-tight">{hoveredNode.label}</h4>
+                            </div>
+                            {hoveredNode.description && (
+                                <p className="text-slate-300 text-sm leading-relaxed font-sarabun mb-2">
+                                    <span className="text-slate-500 text-xs uppercase block mb-1">รายละเอียด:</span>
+                                    {hoveredNode.description}
+                                </p>
+                            )}
+                             <div className="flex justify-between items-center mt-2">
+                                <span className="text-xs text-slate-500 font-mono uppercase tracking-widest font-sarabun">{hoveredNode.group}</span>
+                                <span className="text-[10px] text-slate-600 font-mono">{hoveredNode.id}</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Legend */}
+                    <Legend items={[
+                        { key: 'cell', label: 'เคมี & เซลล์ (บท 2-3)', color: colors.cell },
+                        { key: 'genetics', label: 'พันธุศาสตร์ (บท 4-6)', color: colors.genetics },
+                        { key: 'evolution', label: 'วิวัฒนาการ (บท 7)', color: colors.evolution },
+                        { key: 'plants', label: 'พืช (บท 8-12)', color: colors.plants },
+                        { key: 'animals', label: 'ระบบร่างกายสัตว์ (บท 13-22)', color: colors.animals },
+                        { key: 'ecology', label: 'นิเวศวิทยา (บท 23-24)', color: colors.ecology },
+                    ]} />
+                </div>
+            );
+        };
+
+        const App = () => {
+            return <ConstellationGraph />;
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
